@@ -1,0 +1,35 @@
+name: Descomprimir proyecto
+
+on:
+  workflow_dispatch:
+    inputs:
+      zip_file:
+        description: "Nombre del archivo .zip en la raíz del repo"
+        required: true
+        default: "para-ella-apple-liquid-glass-MEJORADO.zip"
+
+jobs:
+  unzip:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Clonar repo
+        uses: actions/checkout@v4
+
+      - name: Descomprimir
+        run: |
+          unzip -o "${{ github.event.inputs.zip_file }}" -d _extraido
+          # el zip trae todo dentro de una carpeta "forja-tienda/",
+          # así que subimos su contenido a la raíz del repo
+          shopt -s dotglob
+          mv _extraido/forja-tienda/* .
+          rm -rf _extraido "${{ github.event.inputs.zip_file }}"
+
+      - name: Commitear resultado
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Descomprimir proyecto" || echo "Nada para commitear"
+          git push
